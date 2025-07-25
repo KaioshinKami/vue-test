@@ -1,25 +1,39 @@
 <template>
+  <my-input
+      v-model="searchQuery"
+      placeholder="Пойск по названию"
+  />
+
   <my-button @click="showDialog">
     Создать
   </my-button>
+
   <my-button @click="fetchPosts">Получить Посты с бэка</my-button>
+
+  <my-select v-model="selectedSort" :options="options"/>
 
   <my-dialog v-model:show = "dialogVisible">
     <PostForum @create = 'addPost'/>
   </my-dialog>
   <PostList
-      :posts = "posts"
+      :posts = "sortedAndSearch"
       @remove = "removePost"
+      v-if="!isPostLoading"
   />
+  <div v-else>
+    идет загрузка
+  </div>
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import PostForum from './PostForum.vue';
 import PostList from './PostList.vue';
 import MyDialog from "../UI/MyDialog.vue";
 import MyButton from "../UI/MyButton.vue";
-import axios from "axios";
+import axios, {post} from "axios";
+import MySelect from "../UI/MySelect.vue";
+import MyInput from "../UI/MyInput.vue";
 
 interface Post{
   id: number;
@@ -28,20 +42,32 @@ interface Post{
 }
 
 const posts = ref<Post[]>([
-  {id:1, title: 'Java Script', body: 'Язык про JS'},
-  {id:2, title: 'Java', body: 'Язык про Java'},
-  {id:3, title: 'Type Script', body: 'Язык про TS'},
+  {id:13, title: 'Java Script', body: 'Язык про JS'},
+  {id:26, title: 'Java', body: 'Язык про Java'},
+  {id:33, title: 'Type Script', body: 'Язык про TS'},
+])
+const dialogVisible = ref(false);
+const isPostLoading = ref(false)
+const selectedSort = ref('')
+const searchQuery = ref('')
+const options = ref([
+  { value: 'title', name: 'По названию' },
+  { value: 'body', name: 'По описанию' }
 ])
 
 const fetchPosts = async() => {
   try{
+    isPostLoading.value = true
     const response = await axios.get('https://jsonplaceholder.typicode.com/posts?_limit=10')
     posts.value.push(...response.data)
+    isPostLoading.value = false
   }
   catch (e) {
     alert(e)
+  } finally {
   }
 }
+onMounted(fetchPosts())
 
 const addPost = (newPost: Post) => {
   posts.value.push(newPost)
@@ -52,12 +78,24 @@ const removePost = (postToRemove: Post) => {
   posts.value = posts.value.filter(post => post.id !== postToRemove.id)
 }
 
-const dialogVisible = ref(false);
-
 function showDialog(){
   dialogVisible.value = true
 }
 
+const sortedPosts = computed(() => {
+  return [...posts.value].sort((post1, post2) => {
+    if (!selectedSort.value) return 0
+    return post1[selectedSort.value as keyof Post]
+        .toString()
+        .localeCompare(post2[selectedSort.value as keyof Post].toString())
+  })
+})
+
+const sortedAndSearch = computed(() => {
+  return sortedPosts.value.filter(post =>
+      post.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
 </script>
 
 <style scoped>
