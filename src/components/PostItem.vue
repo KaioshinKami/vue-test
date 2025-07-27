@@ -6,7 +6,13 @@
       <div><strong>Описание:</strong> {{post.body}}</div>
     </div>
 
-    <div class="del_btn">
+    <div class="btns">
+      <my-button
+          @click="router.push(`/posts/${post.id}`)"
+      >
+        Открыть
+      </my-button>
+
       <my-button @click = 'removePost'>
         Удалить
       </my-button>
@@ -16,6 +22,7 @@
 
 <script setup>
 import MyButton from '../UI/MyButton.vue'
+import router from "../router/router.js";
 
 const props = defineProps({
   post: {
@@ -39,5 +46,9 @@ function removePost(){
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.btns{
+  display: flex;
 }
 </style>

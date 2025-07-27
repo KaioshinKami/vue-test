@@ -1,9 +1,10 @@
 <template>
-  <Post />
+  <Navbar />
+  <router-view />
 </template>
 
 <script setup lang="ts">
-import Post from "./components/Post.vue";
+import Navbar from "./components/Navbar.vue";
 </script>
 
 <style>

@@ -8,8 +8,6 @@
     Создать
   </my-button>
 
-  <my-button @click="fetchPosts">Получить Посты с бэка</my-button>
-
   <my-select v-model="selectedSort" :options="options"/>
 
   <my-dialog v-model:show = "dialogVisible">
@@ -39,8 +37,8 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, watch} from "vue";
 import axios, {post} from "axios";
-import PostForum from './PostForum.vue';
-import PostList from './PostList.vue';
+import PostForum from '../components/PostForum.vue';
+import PostList from '../components/PostList.vue';
 import MyDialog from "../UI/MyDialog.vue";
 import MyButton from "../UI/MyButton.vue";
 import MySelect from "../UI/MySelect.vue";
