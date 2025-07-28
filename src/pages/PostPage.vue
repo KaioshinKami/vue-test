@@ -14,7 +14,7 @@
     <PostForum @create = 'addPost'/>
   </my-dialog>
   <PostList
-      :posts = "sortedAndSearch"
+      :posts = "posts"
       @remove = "removePost"
       v-if="!isPostLoading"
   />
@@ -35,8 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from "vue";
-import axios, {post} from "axios";
+import {computed, onMounted, ref} from "vue";
 import PostForum from '../components/PostForum.vue';
 import PostList from '../components/PostList.vue';
 import MyDialog from "../UI/MyDialog.vue";
@@ -44,81 +43,51 @@ import MyButton from "../UI/MyButton.vue";
 import MySelect from "../UI/MySelect.vue";
 import MyInput from "../UI/MyInput.vue";
 import MyPagination from "../UI/MyPagination.vue";
+import {useStore} from "vuex";
+import type {Post} from "../store/postModule.ts";
 
-interface Post{
-  id: number;
-  title: string;
-  body: string;
-}
 
-const posts = ref<Post[]>([
-  {id:13, title: 'Java Script', body: 'Язык про JS'},
-  {id:26, title: 'Java', body: 'Язык про Java'},
-  {id:33, title: 'Type Script', body: 'Язык про TS'},
-])
-const dialogVisible = ref(false);
-const isPostLoading = ref(false)
-const selectedSort = ref('')
-const searchQuery = ref('')
-const page = ref(1)
-const limit = ref(10)
-const totalPages = ref(0)
-const options = ref([
+const store = useStore()
+const posts = computed(() => store.getters['post/sortedAndSearchedPosts'])
+const isPostLoading = computed(() => store.state.post.isPostLoading)
+const selectedSort = computed({
+  get: () => store.state.post.selectedSort,
+  set: (val) => store.commit('post/setSelectedSort', val)
+})
+const searchQuery = computed({
+  get: () => store.state.post.searchQuery,
+  set: (val) => store.commit('post/setSearchQuery', val)
+})
+const page = computed(() => store.state.post.page)
+const totalPages = computed(() => store.state.post.totalPages)
+
+const options = [
   { value: 'title', name: 'По названию' },
   { value: 'body', name: 'По описанию' }
-])
+]
 
-const fetchPosts = async() => {
-  try{
-    isPostLoading.value = true
-    const response = await axios.get('https://jsonplaceholder.typicode.com/posts', {
-      params: {
-        _page: page.value,
-        _limit: limit.value
-      }
-    })
-    totalPages.value = Math.ceil(response.headers['x-total-count'] / limit.value)
-    posts.value = response.data
-    isPostLoading.value = false
-  }
-  catch (e) {
-    alert(e)
-  } finally {
-  }
-}
-onMounted(fetchPosts)
+const dialogVisible = ref(false)
 
-const addPost = (newPost: Post) => {
-  posts.value.push(newPost)
-  dialogVisible.value=false
-}
-
-const removePost = (postToRemove: Post) => {
-  posts.value = posts.value.filter(post => post.id !== postToRemove.id)
-}
-
-function showDialog(){
+function showDialog() {
   dialogVisible.value = true
 }
 
-const sortedPosts = computed(() => {
-  return [...posts.value].sort((post1, post2) => {
-    if (!selectedSort.value) return 0
-    return post1[selectedSort.value as keyof Post]
-        .toString()
-        .localeCompare(post2[selectedSort.value as keyof Post].toString())
-  })
+onMounted(() => {
+  store.dispatch('post/fetchPosts')
 })
 
-const sortedAndSearch = computed(() => {
-  return sortedPosts.value.filter(post =>
-      post.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
+const addPost = (newPost: Post) => {
+  store.commit('post/addPost', newPost)
+}
 
-function changePage(pageNumber){
-  page.value = pageNumber
-  fetchPosts()
+const removePost = (post: Post) => {
+  store.commit('post/removePost', post.id)
+}
+
+
+const changePage = (pageNumber) => {
+  store.commit('post/setPage', pageNumber)
+  store.dispatch('post/fetchPosts')
 }
 </script>
 
